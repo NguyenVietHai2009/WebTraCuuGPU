@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Database - NVIDIA & AMD</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#09090b',
+                        card: '#121217',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darker text-zinc-100 min-h-screen font-sans selection:bg-cyan-500 selection:text-white">
+
+    <!-- Container -->
+    <div class="max-w-6xl mx-auto px-4 py-10">
+        
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-green-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                GPU Spec Database
+            </h1>
+            <p class="text-zinc-400 text-sm">Tra cứu nhanh thông số kỹ thuật card đồ hoạ NVIDIA & AMD</p>
+        </header>
+
+        <!-- Search & Filter Bar -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center">
+            <!-- Search Input -->
+            <div class="w-full sm:w-96 relative">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm GPU (VD: RTX 4060, RX 7800...)" 
+                    class="w-full bg-card border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 transition-colors">
+            </div>
+
+            <!-- Brand Filters -->
+            <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
+                <button onclick="filterBrand('all')" class="brand-btn px-4 py-2 rounded-xl text-sm font-medium bg-zinc-800 text-white hover:bg-zinc-700 transition-all active">Tất cả</button>
+                <button onclick="filterBrand('NVIDIA')" class="brand-btn px-4 py-2 rounded-xl text-sm font-medium bg-card border border-zinc-800 text-zinc-400 hover:text-white hover:border-green-500 transition-all">NVIDIA</button>
+                <button onclick="filterBrand('AMD')" class="brand-btn px-4 py-2 rounded-xl text-sm font-medium bg-card border border-zinc-800 text-zinc-400 hover:text-white hover:border-red-500 transition-all">AMD</button>
+            </div>
+        </div>
+
+        <!-- GPU Grid -->
+        <div id="gpuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- JavaScript will populate cards here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="noResult" class="hidden text-center py-20 text-zinc-500">
+            Không tìm thấy card đồ hoạ phù hợp.
+        </div>
+
+    </div>
+
+    <!-- Script Data & Logic -->
+    <script>
+        const gpuData = [
+            { name: "NVIDIA GeForce RTX 4090", brand: "NVIDIA", arch: "Ada Lovelace", vram: "24GB GDDR6X", tdp: "450W", release: "2022", tier: "High-End" },
+            { name: "NVIDIA GeForce RTX 4080 Super", brand: "NVIDIA", arch: "Ada Lovelace", vram: "16GB GDDR6X", tdp: "320W", release: "2024", tier: "High-End" },
+            { name: "NVIDIA GeForce RTX 4070 Ti Super", brand: "NVIDIA", arch: "Ada Lovelace", vram: "16GB GDDR6X", tdp: "285W", release: "2024", tier: "Mid-High" },
+            { name: "NVIDIA GeForce RTX 4060 Ti", brand: "NVIDIA", arch: "Ada Lovelace", vram: "8GB/16GB GDDR6", tdp: "160W", release: "2023", tier: "Mid-Range" },
+            { name: "NVIDIA GeForce RTX 4060", brand: "NVIDIA", arch: "Ada Lovelace", vram: "8GB GDDR6", tdp: "115W", release: "2023", tier: "Budget" },
+            { name: "AMD Radeon RX 7900 XTX", brand: "AMD", arch: "RDNA 3", vram: "24GB GDDR6", tdp: "355W", release: "2022", tier: "High-End" },
+            { name: "AMD Radeon RX 7900 XT", brand: "AMD", arch: "RDNA 3", vram: "20GB GDDR6", tdp: "315W", release: "2022", tier: "High-End" },
+            { name: "AMD Radeon RX 7800 XT", brand: "AMD", arch: "RDNA 3", vram: "16GB GDDR6", tdp: "263W", release: "2023", tier: "Mid-High" },
+            { name: "AMD Radeon RX 7700 XT", brand: "AMD", arch: "RDNA 3", vram: "12GB GDDR6", tdp: "245W", release: "2023", tier: "Mid-Range" },
+            { name: "AMD Radeon RX 6700 XT", brand: "AMD", arch: "RDNA 2", vram: "12GB GDDR6", tdp: "230W", release: "2021", tier: "Mid-Range" },
+            { name: "AMD Radeon RX 7600", brand: "AMD", arch: "RDNA 3", vram: "8GB GDDR6", tdp: "165W", release: "2023", tier: "Budget" }
+        ];
+
+        let currentBrand = 'all';
+        let searchQuery = '';
+
+        const grid = document.getElementById('gpuGrid');
+        const searchInput = document.getElementById('searchInput');
+        const noResult = document.getElementById('noResult');
+
+        function renderGPUs() {
+            const filtered = gpuData.filter(gpu => {
+                const matchesBrand = currentBrand === 'all' || gpu.brand === currentBrand;
+                const matchesSearch = gpu.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      gpu.arch.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesBrand && matchesSearch;
+            });
+
+            grid.innerHTML = '';
+            if (filtered.length === 0) {
+                noResult.classList.remove('hidden');
+                return;
+            } else {
+                noResult.classList.add('hidden');
+            }
+
+            filtered.forEach(gpu => {
+                const brandColor = gpu.brand === 'NVIDIA' ? 'text-green-400 border-green-500/20' : 'text-red-400 border-red-500/20';
+                const badgeBg = gpu.brand === 'NVIDIA' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400';
+                
+                const card = document.createElement('div');
+                card.className = `bg-card border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-all flex flex-col justify-between`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${badgeBg}">${gpu.brand}</span>
+                            <span class="text-xs text-zinc-500 font-mono">${gpu.release}</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-4 text-zinc-100">${gpu.name}</h3>
+                        <div class="space-y-2 text-sm text-zinc-400">
+                            <div class="flex justify-between border-b border-zinc-800/60 pb-1.5">
+                                <span class="text-zinc-500"> Kiến trúc</span>
+                                <span class="font-medium text-zinc-200">${gpu.arch}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-zinc-800/60 pb-1.5">
+                                <span class="text-zinc-500"> VRAM</span>
+                                <span class="font-medium text-cyan-400">${gpu.vram}</span>
+                            </div>
+                            <div class="flex justify-between pb-1.5">
+                                <span class="text-zinc-500"> TDP</span>
+                                <span class="font-medium text-zinc-200">${gpu.tdp}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 pt-3 border-t border-zinc-800/60 flex justify-between items-center text-xs">
+                        <span class="text-zinc-500">Phân khúc</span>
+                        <span class="text-zinc-300 font-semibold">${gpu.tier}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Event Listeners
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderGPUs();
+        });
+
+        function filterBrand(brand) {
+            currentBrand = brand;
+            document.querySelectorAll('.brand-btn').forEach(btn => {
+                btn.classList.remove('bg-zinc-800', 'text-white', 'bg-card', 'border', 'border-zinc-800');
+                if(btn.textContent.toLowerCase().includes(brand.toLowerCase()) || (brand === 'all' && btn.textContent === 'Tất cả')) {
+                    btn.classList.add('bg-zinc-800', 'text-white');
+                } else {
+                    btn.classList.add('bg-card', 'border', 'border-zinc-800', 'text-zinc-400');
+                }
+            });
+            renderGPUs();
+        }
+
+        // Initial render
+        renderGPUs();
+    </script>
+</body>
+</html>
